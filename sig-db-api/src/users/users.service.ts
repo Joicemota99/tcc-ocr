@@ -2,6 +2,7 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { UserProfile } from './entities/user-profile.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private userProfileRepository: Repository<UserProfile>,
   ) {}
 
   // logica para validar senha
@@ -20,9 +23,9 @@ export class UsersService {
   }
 
   // Lógica para criar um novo usuário
-  async create(userData: Partial<User>): Promise<User> {
+  async create(createUserDto: any): Promise<User> {
     // função para verificar se o email existe no bd
-    const existingUser = await this.findByEmail(userData.email);
+    const existingUser = await this.findByEmail(createUserDto.email);
     if (existingUser) {
       throw new ConflictException('Este e-mail já está em uso.');
     }
@@ -30,24 +33,35 @@ export class UsersService {
     // O '12' é o "custo" do salt (quanto maior, mais seguro porém mais lento)
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(
-      userData.encrypted_password,
+      createUserDto.password,
       saltRounds,
     );
 
-    // 3. CRIAR A NOVA INSTÂNCIA DO USUÁRIO COM A SENHA CRIPTOGRAFADA
+    // 4. CRIAR O USER
     const newUser = this.usersRepository.create({
-      ...userData, // Copia todos os dados (email, etc.)
-      encrypted_password: hashedPassword, // Substitui a senha plain text pela versão criptografada
+      email: createUserDto.email,
+      encrypted_password: hashedPassword,
     });
-    // 4. SALVAR NO BANCO DE DADOS
-    return await this.usersRepository.save(newUser);
+
+    //SALVA O USER
+    const savedUser = await this.usersRepository.save(newUser);
+
+    // 2. DEPOIS: Criar e salvar o PROFILE com o user_id
+    const userProfile = this.userProfileRepository.create({
+      user_id: savedUser.id, // ← ID do user JÁ SALVO
+      full_name: createUserDto.full_name,
+      phone: createUserDto.phone || null,
+      is_active: true,
+    });
+    await this.userProfileRepository.save(userProfile);
+
+    return await this.usersRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['profile'],
+    });
   }
   // Lógica para achar um e-mail especifico
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
-  }
-  // Lógica para achar usuário pelo ID
-  async findById(id: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { id } });
   }
 }

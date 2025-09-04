@@ -2,6 +2,7 @@
 import { registerAs } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../../users/entities/user.entity';
+import { UserProfile } from 'src/users/entities/user-profile.entity';
 
 export default registerAs(
   'database',
@@ -12,7 +13,7 @@ export default registerAs(
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    entities: [User], // Padrão para encontrar todas as entities
+    entities: [User, UserProfile], // Padrão para encontrar todas as entities
     synchronize: true, // Sincroniza apenas em dev
     logging: true, // Descomente para ver as queries SQL no console (útil para debug)
   }),

@@ -5,7 +5,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
+import { UserProfile } from './user-profile.entity';
 
 @Entity('users') // Nome da tabela no banco de dados
 export class User {
@@ -17,6 +19,10 @@ export class User {
 
   @Column({ type: 'varchar' }) // Senha criptografada
   encrypted_password: string;
+
+  // RELAÇÃO One-to-One inversa
+  @OneToOne(() => UserProfile, (profile) => profile.user)
+  profile: UserProfile; // Esta propriedade É USADA
 
   @CreateDateColumn({ name: 'created_at' }) // Data de criação
   createdAt: Date;

@@ -2,12 +2,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity'; // Importe a Entity
+import { UserProfile } from './entities/user-profile.entity'; // ← Importar a entity
 import { UsersService } from './users.service'; // Já deve estar aqui
 import { UsersController } from './users.controller';
 
 @Module({
   // Importe o TypeOrmModule e forneça a lista de entities deste módulo
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([User, UserProfile])],
   // Torne o UsersService disponível para outros módulos que importarem este
   providers: [UsersService],
   // Exporte o TypeOrmModule (com a entity User) e o UsersService
